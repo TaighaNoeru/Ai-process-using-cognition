@@ -1,4 +1,8 @@
 # Ai-congnitive-process
+
+Comments: Dont have nothing special about this, sorry for wasting your time
+
+
 A modular cognitive-AI framework that transforms standard language models into adaptive, self-reflective systems. It adds working memory, emotional tone detection, multi-agent reasoning, and automatic quality reflection inside a no-code orchestration layer (n8n).
 
 ---
@@ -185,7 +189,3 @@ git log --pretty=format:"%H %ad %s" --date=iso > commit_log.txt
 ```
 
 ---
-
-Would you like me to make a **shorter “repo description line”** (for the top of the GitHub page) and a **private .gitignore template** that hides your sensitive files automatically (like `workflows/`, `prompts/`, etc.)?
-That’s the next step before you push your repo live.
-
