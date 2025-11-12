@@ -10,7 +10,7 @@ A modular cognitive-AI framework that transforms standard language models into a
 # 🧠 Deep Cognitive Framework — Private Repository
 
 > **Status:** Private & Confidential
-> **Author:** [Your Name or Alias]
+> **Author:** [TaighaNoeru]
 > **Created:** November 2025
 > **Purpose:** Personal R&D — Cognitive Architecture Layer for LLMs
 
