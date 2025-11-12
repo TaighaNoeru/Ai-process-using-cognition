@@ -79,7 +79,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer env.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"
+              "value": "Bearer yourapikey"
             },
             {
               "name": "Content-Type",
