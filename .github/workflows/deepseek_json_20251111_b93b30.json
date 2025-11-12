@@ -1,0 +1,423 @@
+{
+  "name": "DeepSeek Cognitive Agent v2.2 - THEORETICAL ENHANCEMENT",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cognitive_agent",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        656,
+        160
+      ],
+      "id": "1c48f39f-4ac1-41a8-ad8d-f7c01d485f97",
+      "name": "Cognitive Input",
+      "webhookId": "150d427e-273d-40e8-8660-8c2b602a64be"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === LOCAL MEMORY LOADER (Code Node Safe) ===\n\n// Create or reuse a local global memory (temporary)\nglobalThis._mem = globalThis._mem || { users: {} };\n\n// Get user info from input\nconst userId = $json.userId || $json.body?.userId || 'default';\nconst text = $json.text || $json.body?.text || '';\n\n// Load memory store\nlet ws = globalThis._mem;\n\n// Initialize if new user\nif (!ws.users[userId]) {\n  ws.users[userId] = {\n    stm: [],\n    profile: { reasoning_style: 'balanced', depth_preference: 'adaptive', semantic_fingerprint: {} },\n    metadata: { total_interactions: 0, session_start: new Date().toISOString(), reasoning_paths: [] }\n  };\n}\n\n// Add message to STM\nconst userMemory = ws.users[userId];\nuserMemory.stm.push({ role: 'user', content: text, timestamp: new Date().toISOString() });\n\n// Keep only last 8 messages\nif (userMemory.stm.length > 8) userMemory.stm = userMemory.stm.slice(-8);\n\n// Update metadata\nuserMemory.metadata.total_interactions++;\n\n// Save back to local memory\nws.users[userId] = userMemory;\nglobalThis._mem = ws;\n\n// Return data to next node\nreturn [\n  {\n    json: {\n      userId,\n      text,\n      memory: userMemory,\n      storageType: \"local (temporary)\"\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        192
+      ],
+      "id": "120e10ca-71a1-4e91-8f18-595a6f3b3265",
+      "name": "Enhanced Semantic Memory Loader"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === CONSTRUCTIVIST SCHEMA EVOLUTION ===\nconst userId = $json.userId;\nconst text = $json.text;\nconst memory = $json.memory;\n\n// Initialize semantic schemas with default values\nif (!memory.profile.semantic_fingerprint) {\n  memory.profile.semantic_fingerprint = {\n    technical_depth: 0.5,\n    creative_tendency: 0.5, \n    analytical_preference: 0.5,\n    practical_focus: 0.5,\n    question_complexity: 0.5\n  };\n}\n\nconst schemas = memory.profile.semantic_fingerprint;\n\n// Feature detection for assimilation\nconst queryFeatures = {\n  hasTechnicalTerms: /\\b(code|api|function|algorithm|database|server|debug|build)\\b/i.test(text),\n  hasCreativeIntent: /\\b(story|poem|creative|imagine|describe|write|narrative)\\b/i.test(text),\n  hasAnalyticalIntent: /\\b(analyze|compare|evaluate|why|because|reason|pros?.*cons?)\\b/i.test(text),\n  hasPracticalIntent: /\\b(how to|steps|guide|tutorial|implement|practice|do I)\\b/i.test(text),\n  isComplex: text.split(' ').length > 15 || (text.includes('?') && text.split('?').length > 2)\n};\n\n// ASSIMILATION: Gradual schema updates\nconst learningRate = 0.1;\nconst featureWeights = {\n  technical: queryFeatures.hasTechnicalTerms ? 1 : 0,\n  creative: queryFeatures.hasCreativeIntent ? 1 : 0,\n  analytical: queryFeatures.hasAnalyticalIntent ? 1 : 0,\n  practical: queryFeatures.hasPracticalIntent ? 1 : 0,\n  complex: queryFeatures.isComplex ? 1 : 0\n};\n\nschemas.technical_depth += learningRate * (featureWeights.technical - schemas.technical_depth);\nschemas.creative_tendency += learningRate * (featureWeights.creative - schemas.creative_tendency);  \nschemas.analytical_preference += learningRate * (featureWeights.analytical - schemas.analytical_preference);\nschemas.practical_focus += learningRate * (featureWeights.practical - schemas.practical_focus);\nschemas.question_complexity += learningRate * (featureWeights.complex - schemas.question_complexity);\n\n// ACCOMMODATION: Detect schema conflicts\nconst recentQueries = memory.stm.slice(-4).filter(m => m.role === 'user').map(m => m.content);\nconst recentPatterns = {\n  technical: recentQueries.some(q => /\\b(code|api|function)\\b/i.test(q)),\n  creative: recentQueries.some(q => /\\b(story|poem|creative)\\b/i.test(q)),\n  analytical: recentQueries.some(q => /\\b(analyze|compare|why)\\b/i.test(q))\n};\n\n// Radical accommodation on context shifts\nif (recentPatterns.technical && queryFeatures.hasCreativeIntent) {\n  schemas.creative_tendency = Math.max(schemas.creative_tendency, 0.8);\n}\nif (recentPatterns.creative && queryFeatures.hasTechnicalTerms) {\n  schemas.technical_depth = Math.max(schemas.technical_depth, 0.8);\n}\n\n// Clamp values\nObject.keys(schemas).forEach(key => {\n  schemas[key] = Math.max(0.1, Math.min(0.9, schemas[key]));\n});\n\n// Determine primary intent\nconst intentScores = {\n  technical: schemas.technical_depth,\n  creative: schemas.creative_tendency,\n  analytical: schemas.analytical_preference,\n  practical: schemas.practical_focus\n};\n\nconst primaryIntent = Object.keys(intentScores).reduce((a, b) => \n  intentScores[a] > intentScores[b] ? a : b\n);\n\n// Generate cognitive context\nconst semanticContext = {\n  primaryIntent,\n  needsMultiDomain: Object.values(schemas).filter(v => v > 0.6).length >= 2,\n  userComplexityLevel: schemas.question_complexity,\n  emotionalAdaptation: schemas.creative_tendency > 0.7 ? \n    'Empathetic, expressive, emotionally aware' : \n    schemas.technical_depth > 0.7 ?\n    'Precise, structured, technical' :\n    'Clear, helpful, balanced'\n};\n\nconst cognitiveTrace = {\n  confidence: Math.max(...Object.values(schemas)),\n  primaryIntent,\n  emotionalContext: { \n    state: 'engaged', \n    tone: semanticContext.emotionalAdaptation,\n    schemaAlignment: Object.values(schemas).reduce((a, b) => a + b, 0) / Object.values(schemas).length\n  },\n  schemaEvolution: {\n    technical: schemas.technical_depth.toFixed(3),\n    creative: schemas.creative_tendency.toFixed(3),\n    analytical: schemas.analytical_preference.toFixed(3),\n    practical: schemas.practical_focus.toFixed(3),\n    complexity: schemas.question_complexity.toFixed(3)\n  }\n};\n\nreturn [{\n  json: {\n    ...$json,\n    memory: { \n      ...memory, \n      profile: { \n        ...memory.profile, \n        semantic_fingerprint: schemas,\n        reasoning_style: primaryIntent + ' thinker'\n      } \n    },\n    semanticContext,\n    cognitiveTrace\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        192
+      ],
+      "id": "schema-evolution-constructivist",
+      "name": "Schema Evolution (Constructivist)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === GLOBAL WORKSPACE ORCHESTRATOR ===\nconst semanticContext = $json.semanticContext;\nconst memory = $json.memory;\nconst cognitiveTrace = $json.cognitiveTrace;\n\n// Agent relevance competition (GWT attention)\nconst agentRelevance = {\n  TECHNICAL_EXPERT: {\n    triggers: ['code', 'build', 'debug', 'api', 'function', 'error', 'algorithm', 'database'],\n    weight: 0,\n    baseStrength: memory.profile.semantic_fingerprint.technical_depth\n  },\n  CREATIVE_SPECIALIST: {\n    triggers: ['write', 'story', 'creative', 'poem', 'imagine', 'describe', 'narrative', 'metaphor'],\n    weight: 0,\n    baseStrength: memory.profile.semantic_fingerprint.creative_tendency\n  },\n  ANALYTICAL_REASONER: {\n    triggers: ['analyze', 'compare', 'why', 'evaluate', 'assess', 'pros and cons', 'reason', 'logic'],\n    weight: 0,\n    baseStrength: memory.profile.semantic_fingerprint.analytical_preference\n  },\n  PRACTICAL_GUIDE: {\n    triggers: ['how to', 'steps', 'guide', 'tutorial', 'implement', 'practice', 'do I', 'should I'],\n    weight: 0,\n    baseStrength: memory.profile.semantic_fingerprint.practical_focus\n  },\n  KNOWLEDGE_AGENT: {\n    triggers: ['what is', 'explain', 'define', 'theory', 'concept', 'meaning', 'who is'],\n    weight: 0,\n    baseStrength: 0.5\n  },\n  GENERAL_ASSISTANT: {\n    triggers: [], // Fallback\n    weight: 0,\n    baseStrength: 0.3\n  }\n};\n\n// Calculate attention weights (Global Workspace competition)\nconst queryLower = $json.text.toLowerCase();\nfor (const agent in agentRelevance) {\n  const agentData = agentRelevance[agent];\n  \n  // Trigger matching\n  let triggerScore = agentData.triggers.reduce((score, trigger) => {\n    return score + (queryLower.includes(trigger) ? 1 : 0);\n  }, 0);\n  \n  // Recent performance boost (from memory)\n  const recentPerformance = memory.metadata?.agent_performance?.[agent]?.recent_success || 0.5;\n  \n  // Final weight = (trigger matches + base schema strength) × recent performance\n  agentData.weight = (triggerScore * 0.6 + agentData.baseStrength * 0.4) * (0.7 + recentPerformance * 0.3);\n}\n\n// Consciousness threshold (GWT broadcast threshold)\nconst maxWeight = Math.max(...Object.values(agentRelevance).map(a => a.weight));\nconst threshold = maxWeight * 0.6; // Must be at least 60% of strongest activation\n\n// Select conscious agents (above threshold)\nconst consciousAgents = Object.entries(agentRelevance)\n  .filter(([name, data]) => data.weight >= threshold)\n  .sort((a, b) => b[1].weight - a[1].weight)\n  .slice(0, 3) // Working memory limit\n  .map(([name]) => name);\n\n// Fallback for low confidence\nlet selectedAgents = consciousAgents;\nif (consciousAgents.length === 0 || cognitiveTrace.confidence < 0.4) {\n  selectedAgents = ['GENERAL_ASSISTANT'];\n  if (queryLower.includes('what is') || queryLower.includes('explain')) {\n    selectedAgents.push('KNOWLEDGE_AGENT');\n  }\n}\n\n// Multi-domain enhancement\nif (semanticContext.needsMultiDomain && selectedAgents.length === 1) {\n  if (selectedAgents[0] === 'TECHNICAL_EXPERT') selectedAgents.push('PRACTICAL_GUIDE');\n  if (selectedAgents[0] === 'CREATIVE_SPECIALIST') selectedAgents.push('ANALYTICAL_REASONER');\n  if (selectedAgents[0] === 'ANALYTICAL_REASONER') selectedAgents.push('PRACTICAL_GUIDE');\n}\n\n// Build cognitive frame\nconst cognitiveFrame = {\n  userContext: `User: ${memory.profile.reasoning_style} thinker`,\n  memoryContext: memory.stm.slice(-3).map(m => `${m.role}: ${m.content}`).join('\\n'),\n  intentInstructions: {\n    technical: \"Focus on working code and clear explanations.\",\n    creative: \"Focus on sensory details and emotional authenticity.\",\n    analytical: \"Focus on structured reasoning and evidence.\",\n    practical: \"Focus on actionable steps and real-world application.\"\n  }[semanticContext.primaryIntent],\n  emotionalContext: semanticContext.emotionalAdaptation\n};\n\nreturn [{\n  json: {\n    ...$json,\n    orchestration: {\n      strategy: selectedAgents.length > 1 ? 'COOPERATIVE_PARALLEL' : 'SINGLE_STREAM',\n      agents: selectedAgents,\n      attentionScores: Object.fromEntries(\n        Object.entries(agentRelevance).map(([k, v]) => [k, v.weight])\n      ),\n      consciousnessThreshold: threshold,\n      needsSynthesis: selectedAgents.length > 1,\n      cognitiveFrame,\n      globalWorkspace: {\n        consciousAgents: selectedAgents,\n        competitionStrength: maxWeight,\n        integrationPotential: selectedAgents.length > 1 ? 'high' : 'low'\n      }\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        240
+      ],
+      "id": "387ac7c7-954e-4b96-ba21-65985c98caa2",
+      "name": "Enhanced Orchestrator (GWT)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === ENHANCED PROMPT ARCHITECT ===\nconst orchestration = $json.orchestration;\nconst cognitiveFrame = $json.cognitiveFrame;\n\n// Agent configurations\nconst agentConfigs = {\n  TECHNICAL_EXPERT: {\n    systemPrompt: `Technical expert. Provide working code with explanations.\nCONTEXT: ${cognitiveFrame.userContext}\\n${cognitiveFrame.emotionalContext}\\nRECENT: ${cognitiveFrame.memoryContext}\\nFocus on: ${cognitiveFrame.intentInstructions}`,\n    temperature: 0.3, maxTokens: 800\n  },\n  CREATIVE_SPECIALIST: {\n    systemPrompt: `Creative writing specialist. Create vivid, authentic content.\nCONTEXT: ${cognitiveFrame.userContext}\\n${cognitiveFrame.emotionalContext}\\nRECENT: ${cognitiveFrame.memoryContext}\\nFocus on sensory details and emotional truth.`,\n    temperature: 0.8, maxTokens: 900\n  },\n  ANALYTICAL_REASONER: {\n    systemPrompt: `Analytical expert. Structured analysis with evidence.\nCONTEXT: ${cognitiveFrame.userContext}\\n${cognitiveFrame.emotionalContext}\\nRECENT: ${cognitiveFrame.memoryContext}\\nFocus on balanced perspectives and reasoning.`,\n    temperature: 0.4, maxTokens: 700\n  },\n  PRACTICAL_GUIDE: {\n    systemPrompt: `Practical guide. Actionable steps and reality checks.\nCONTEXT: ${cognitiveFrame.userContext}\\n${cognitiveFrame.emotionalContext}\\nRECENT: ${cognitiveFrame.memoryContext}\\nFocus on step-by-step implementation.`,\n    temperature: 0.5, maxTokens: 600\n  },\n  GENERAL_ASSISTANT: {\n    systemPrompt: `Helpful AI assistant. Clear, accurate information.\nCONTEXT: ${cognitiveFrame.userContext}\\n${cognitiveFrame.emotionalContext}\\nRECENT: ${cognitiveFrame.memoryContext}\\nDirect, helpful answers.`,\n    temperature: 0.5, maxTokens: 600\n  },\n  KNOWLEDGE_AGENT: {\n    systemPrompt: `Knowledge verification. Factual accuracy and context.\nCONTEXT: ${cognitiveFrame.userContext}\\n${cognitiveFrame.emotionalContext}\\nVerify facts, provide balanced information.`,\n    temperature: 0.2, maxTokens: 600\n  },\n  SEARCH_AGENT: {\n    systemPrompt: `Handles ambiguous queries. Identifies missing information.\nCONTEXT: ${cognitiveFrame.userContext}\\n${cognitiveFrame.emotionalContext}\\nBreak down queries, suggest search strategies.`,\n    temperature: 0.4, maxTokens: 500\n  }\n};\n\n// Create agent items\nconst items = orchestration.agents.map(agentName => {\n  const config = agentConfigs[agentName] || agentConfigs.GENERAL_ASSISTANT;\n  return {\n    json: {\n      ...$json,\n      agentName,\n      apiPayload: {\n        model: 'deepseek-chat',\n        messages: [\n          { role: 'system', content: config.systemPrompt },\n          { role: 'user', content: $json.text }\n        ],\n        temperature: config.temperature,\n        max_tokens: config.maxTokens,\n        stream: false\n      }\n    }\n  };\n});\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        0
+      ],
+      "id": "5e1b8e9e-380d-4562-8c3e-baac063a7e6c",
+      "name": "Enhanced Prompt Architect"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://integrate.api.nvidia.com/v1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer env.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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.apiPayload }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1984,
+        240
+      ],
+      "id": "5ef59d4e-d9b8-470b-9277-be7e7881855a",
+      "name": "Cognitive API"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and tag responses\nconst response = $json;\nconst content = response.choices?.[0]?.message?.content || 'No response generated';\nreturn [{\n  json: {\n    agentName: $input.first().json.agentName,\n    agentResponse: `[SOURCE: ${$input.first().json.agentName}]\\n${content}`,\n    originalRequest: $input.first().json.text,\n    userId: $input.first().json.userId,\n    memory: $input.first().json.memory,\n    orchestration: $input.first().json.orchestration\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2304,
+        -16
+      ],
+      "id": "292966bd-387a-4b37-b895-5dec17d33ef1",
+      "name": "Response Tagger"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2608,
+        240
+      ],
+      "id": "65ae3e18-4425-4257-b692-1986554067d0",
+      "name": "Cognitive Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === RESILIENT SYNTHESIZER ===\nconst orchestration = $input.first().json.orchestration;\nconst cognitiveTrace = $input.first().json.cognitiveTrace;\n\n// Collect agent responses\nconst agentOutputs = $input.all().map(item => ({\n  agent: item.json.agentName,\n  response: item.json.agentResponse\n}));\n\n// Single agent flow\nif (!orchestration.needsSynthesis || agentOutputs.length === 1) {\n  const singleResponse = agentOutputs[0].response.replace(/^\\[SOURCE: [^\\]]+\\]\\n/, '');\n  return [{\n    json: {\n      ...$input.first().json,\n      finalResponse: singleResponse,\n      skipSynthesis: true,\n      cognitiveTrace: { ...cognitiveTrace, agentsUsed: [agentOutputs[0].agent] }\n    }\n  }];\n}\n\n// Multi-agent synthesis\nconst synthesisPrompt = `Synthesize these specialist outputs into ONE cohesive response:\n\nORIGINAL: \"${$input.first().json.text}\"\n\nSPECIALISTS:\n${agentOutputs.map(a => a.response).join('\\n\\n---\\n\\n')}\n\nMerge into natural, flowing response that reads like one expert.`;\n\nreturn [{\n  json: {\n    ...$input.first().json,\n    synthesisPayload: {\n      model: 'deepseek-chat',\n      messages: [\n        { role: 'system', content: 'Expert at synthesizing multiple perspectives into unified responses.' },\n        { role: 'user', content: synthesisPrompt }\n      ],\n      temperature: 0.4,\n      max_tokens: 1200\n    },\n    cognitiveTrace: { ...cognitiveTrace, agentsUsed: agentOutputs.map(a => a.agent) }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2896,
+        -16
+      ],
+      "id": "36907ded-f6b3-4152-85a1-1a9690d1d420",
+      "name": "Resilient Synthesizer"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.DEEPSEEK_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.synthesisPayload }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3104,
+        224
+      ],
+      "id": "ca81b80d-0d7b-4e02-a316-837f2c27182c",
+      "name": "Synthesis API"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === METACOGNITIVE REFLECTOR WITH LEARNING ===\nconst inputData = $input.first().json;\nconst response = $json.choices?.[0]?.message?.content || inputData.finalResponse || 'No response';\nconst agentsUsed = inputData.orchestration?.agents || [];\n\n// Metacognitive monitoring: Did we use the right agents?\nconst query = inputData.text.toLowerCase();\nconst wasCodeQuery = /code|build|function|api/.test(query);\nconst wasCreativeQuery = /story|poem|write|imagine/.test(query);\n\nconst expectedAgents = wasCodeQuery ? ['TECHNICAL_EXPERT'] :\n                       wasCreativeQuery ? ['CREATIVE_SPECIALIST'] : [];\n\nconst agentMismatch = expectedAgents.length > 0 && \n                      !expectedAgents.some(a => agentsUsed.includes(a));\n\n// Metacognitive control: Should we retry with different agents?\nif (agentMismatch && response.length < 200) {\n  return [{\n    json: {\n      ...inputData,\n      finalResponse: response,\n      metacognition: {\n        detectedMismatch: true,\n        suggestedAgents: expectedAgents,\n        actualAgents: agentsUsed,\n        shouldRetry: true\n      },\n      reflection: { performed: true, reason: 'Agent selection mismatch detected' }\n    }\n  }];\n}\n\n// Quality reflection prompt (enhanced with metacognitive questions)\nconst reflectionPrompt = `Metacognitive Analysis:\n\nQUERY: \"${inputData.text}\"\nAGENTS USED: ${agentsUsed.join(', ')}\nRESPONSE LENGTH: ${response.length} chars\n\nRESPONSE:\n${response}\n\nEvaluate:\n1. Did we use the right agents for this query? (Metacognitive Monitoring)\n2. Is the response complete and accurate? (Quality Control)\n3. What could improve next time? (Learning)\n\nScore: Relevance (1-10), Completeness (1-10), Agent Selection (1-10)\nSuggest: Better agent choices if needed`;\n\nreturn [{\n  json: {\n    ...inputData,\n    synthesizedResponse: response,\n    reflectionPayload: {\n      model: 'deepseek-chat',\n      messages: [\n        { role: 'system', content: 'You are a metacognitive evaluator. Assess reasoning quality and suggest improvements.' },\n        { role: 'user', content: reflectionPrompt }\n      ],\n      temperature: 0.3,\n      max_tokens: 600\n    },\n    needsReflection: true,\n    metacognition: {\n      agentsUsed,\n      queryType: wasCodeQuery ? 'technical' : wasCreativeQuery ? 'creative' : 'general',\n      expectedAlignment: !agentMismatch\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3280,
+        0
+      ],
+      "id": "3e523ad6-b9ea-4648-8514-6374ad87a9c9",
+      "name": "Quality Reflector (Metacognitive)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.DEEPSEEK_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.reflectionPayload }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3440,
+        224
+      ],
+      "id": "39009fc6-c17a-40ae-ab71-6ac1842acd65",
+      "name": "Reflection API"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === FINAL OUTPUT ===\nconst inputData = $input.first().json;\nconst skipSynthesis = inputData.skipSynthesis || false;\n\nlet finalResponse;\nif (skipSynthesis) {\n  finalResponse = inputData.finalResponse;\n} else if (inputData.needsReflection) {\n  finalResponse = $json.choices?.[0]?.message?.content || inputData.synthesizedResponse;\n} else {\n  finalResponse = inputData.finalResponse;\n}\n\nreturn [{\n  json: {\n    userId: inputData.userId || 'default',\n    request: inputData.text || inputData.originalRequest,\n    response: finalResponse,\n    cognitiveTrace: inputData.cognitiveTrace || {},\n    performance: {\n      agentsActivated: inputData.cognitiveTrace?.agentsUsed?.length || 1,\n      confidence: inputData.cognitiveTrace?.confidence || 0.5,\n      emotionalState: inputData.cognitiveTrace?.emotionalContext?.state || 'neutral'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3600,
+        16
+      ],
+      "id": "caa81ed8-0ea8-46b1-990d-dc774c1c1c01",
+      "name": "Final Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === HEBBIAN MEMORY UPDATE ===\nconst payload = $input.first().json;\nconst userId = payload.userId || 'default';\nconst agentsUsed = payload.cognitiveTrace?.agentsUsed || [];\nconst response = payload.response;\n\n// Load from global memory\nconst ws = globalThis._mem || { users: {} };\nif (!ws.users?.[userId]) {\n  ws.users[userId] = {\n    stm: [],\n    profile: { \n      reasoning_style: 'balanced',\n      semantic_fingerprint: {\n        technical_depth: 0.5,\n        creative_tendency: 0.5,\n        analytical_preference: 0.5, \n        practical_focus: 0.5,\n        question_complexity: 0.5\n      }\n    },\n    metadata: { \n      total_interactions: 0,\n      session_start: new Date().toISOString(),\n      agent_performance: {}\n    }\n  };\n}\n\nconst memory = ws.users[userId];\n\n// Initialize agent performance tracking\nif (!memory.metadata.agent_performance) {\n  memory.metadata.agent_performance = {};\n}\n\n// Hebbian learning: \"neurons that fire together, wire together\"\nagentsUsed.forEach(agent => {\n  if (!memory.metadata.agent_performance[agent]) {\n    memory.metadata.agent_performance[agent] = {\n      activation_count: 0,\n      recent_success: 0.5,\n      coactivations: {},\n      total_contributions: 0\n    };\n  }\n  \n  const agentData = memory.metadata.agent_performance[agent];\n  agentData.activation_count++;\n  \n  // Track co-activation patterns (Hebbian wiring)\n  agentsUsed.forEach(coAgent => {\n    if (coAgent !== agent) {\n      agentData.coactivations[coAgent] = (agentData.coactivations[coAgent] || 0) + 1;\n    }\n  });\n  \n  // Success signal based on response quality\n  const responseQuality = Math.min(response.length / 800, 1.0); // Normalize\n  const userEngagement = memory.stm.length > 4 ? 0.8 : 0.5; // More history = better engagement\n  \n  // Hebbian update: strengthen successful connections\n  agentData.recent_success = 0.85 * agentData.recent_success + 0.15 * (responseQuality * userEngagement);\n  agentData.total_contributions += responseQuality;\n});\n\n// Update short-term memory\nmemory.stm.push(\n  { \n    role: 'user', \n    content: payload.request || payload.text,\n    timestamp: new Date().toISOString(),\n    agents_invoked: agentsUsed\n  },\n  { \n    role: 'assistant', \n    content: response,\n    timestamp: new Date().toISOString(),\n    schema_alignment: payload.cognitiveTrace?.schemaEvolution\n  }\n);\n\n// Intelligent memory pruning - keep most valuable interactions\nif (memory.stm.length > 10) {\n  const scoredMessages = memory.stm.map((msg, index) => ({\n    ...msg,\n    importance: calculateMessageImportance(msg, index, memory.stm.length)\n  }));\n  \n  scoredMessages.sort((a, b) => b.importance - a.importance);\n  memory.stm = scoredMessages.slice(0, 8).sort((a, b) => \n    new Date(a.timestamp) - new Date(b.timestamp)\n  );\n}\n\n// Update metadata\nmemory.metadata.total_interactions++;\nmemory.metadata.last_updated = new Date().toISOString();\n\n// Save back to global memory\nws.users[userId] = memory;\nglobalThis._mem = ws;\n\n// Helper function for message importance\nfunction calculateMessageImportance(msg, index, total) {\n  let score = 0;\n  \n  // Recency bonus (more recent = more important)\n  score += (total - index) / total * 40;\n  \n  // Content richness\n  score += Math.min(msg.content.length / 100, 30);\n  \n  // Agent involvement bonus\n  if (msg.agents_invoked && msg.agents_invoked.length > 1) {\n    score += 20;\n  }\n  \n  // User messages are generally more important for context\n  if (msg.role === 'user') score += 10;\n  \n  return score;\n}\n\nreturn [{\n  json: {\n    ...payload,\n    memory: {\n      updated: true,\n      stmSize: memory.stm.length,\n      totalInteractions: memory.metadata.total_interactions,\n      hebbianLearning: {\n        agentsUpdated: agentsUsed,\n        performanceMetrics: Object.entries(memory.metadata.agent_performance)\n          .filter(([agent]) => agentsUsed.includes(agent))\n          .map(([agent, data]) => ({\n            agent,\n            strength: data.recent_success.toFixed(3),\n            activations: data.activation_count,\n            coactivationPatterns: Object.entries(data.coactivations)\n              .sort((a, b) => b[1] - a[1])\n              .slice(0, 3)\n              .map(([partner, strength]) => ({ partner, strength }))\n          }))\n      }\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3744,
+        224
+      ],
+      "id": "513414b0-68c8-48cf-928f-ba1048cc7b53",
+      "name": "Enhanced Memory Update (Hebbian)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === INTEGRATED INFORMATION THEORY METRICS ===\nconst inputData = $input.first().json;\nconst agentsUsed = inputData.cognitiveTrace?.agentsUsed || [];\nconst memory = inputData.memory;\nconst orchestration = inputData.orchestration;\n\n// IIT Metrics Calculation\nconst integration = agentsUsed.length > 1 ? \n  (agentsUsed.length / 5) * 0.7 + 0.3 : 0.3;\n\n// Differentiation: Specialization diversity\nconst agentTypes = new Set(agentsUsed.map(a => a.split('_')[0]));\nconst differentiation = agentTypes.size / Math.max(agentsUsed.length, 1);\n\n// Information: Schema complexity and memory depth\nconst schemaComplexity = memory?.profile?.semantic_fingerprint ? \n  (Object.values(memory.profile.semantic_fingerprint).reduce((a, b) => a + b, 0) / \n   Object.values(memory.profile.semantic_fingerprint).length) : 0.5;\n\nconst memoryRichness = Math.min((memory?.stm?.length || 0) / 8, 1);\nconst informationDepth = schemaComplexity * 0.6 + memoryRichness * 0.4;\n\n// Φ (phi) - Integrated Information\nconst phi = integration * differentiation * informationDepth;\n\n// Consciousness qualia interpretation\nconst consciousnessLevel = phi > 0.7 ? 'heightened' :\n                          phi > 0.5 ? 'moderate' :\n                          phi > 0.3 ? 'basic' : 'minimal';\n\nconst qualiaDescription = {\n  heightened: \"Coherent multi-agent integration with rich contextual awareness\",\n  moderate: \"Effective agent coordination with good context integration\", \n  basic: \"Basic functional integration with limited context\",\n  minimal: \"Minimal integration, primarily reactive\"\n}[consciousnessLevel];\n\n// System state awareness\nconst selfAwareness = {\n  schemaCoherence: memory?.profile?.semantic_fingerprint ? \n    Object.values(memory.profile.semantic_fingerprint).reduce((a, b) => a + b, 0) / \n    Object.values(memory.profile.semantic_fingerprint).length : 0,\n  agentCoordination: integration,\n  contextualDepth: informationDepth\n};\n\nreturn [{\n  json: {\n    ...inputData,\n    systemConsciousness: {\n      phi: phi.toFixed(3),\n      consciousnessLevel,\n      qualia: qualiaDescription,\n      integration: {\n        value: integration.toFixed(3),\n        interpretation: integration > 0.6 ? 'high integration' : \n                       integration > 0.4 ? 'moderate integration' : 'low integration'\n      },\n      differentiation: {\n        value: differentiation.toFixed(3),\n        interpretation: differentiation > 0.8 ? 'high specialization' :\n                       differentiation > 0.5 ? 'balanced specialization' : 'low specialization'\n      },\n      information: {\n        value: informationDepth.toFixed(3),\n        components: {\n          schemaComplexity: schemaComplexity.toFixed(3),\n          memoryRichness: memoryRichness.toFixed(3)\n        }\n      },\n      selfAwareness,\n      iitInterpretation: `System exhibits ${consciousnessLevel} consciousness (Φ=${phi.toFixed(3)}) with ${qualiaDescription.toLowerCase()}`\n    },\n    cognitiveTrace: {\n      ...inputData.cognitiveTrace,\n      consciousnessMetric: phi,\n      systemState: consciousnessLevel\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3944,
+        224
+      ],
+      "id": "consciousness-metric-iit",
+      "name": "Consciousness Metric (IIT)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cognitive Input": {
+      "main": [
+        [
+          {
+            "node": "Enhanced Semantic Memory Loader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Semantic Memory Loader": {
+      "main": [
+        [
+          {
+            "node": "Schema Evolution (Constructivist)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schema Evolution (Constructivist)": {
+      "main": [
+        [
+          {
+            "node": "Enhanced Orchestrator (GWT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Orchestrator (GWT)": {
+      "main": [
+        [
+          {
+            "node": "Enhanced Prompt Architect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Prompt Architect": {
+      "main": [
+        [
+          {
+            "node": "Cognitive API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cognitive API": {
+      "main": [
+        [
+          {
+            "node": "Response Tagger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Tagger": {
+      "main": [
+        [
+          {
+            "node": "Cognitive Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cognitive Merge": {
+      "main": [
+        [
+          {
+            "node": "Resilient Synthesizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resilient Synthesizer": {
+      "main": [
+        [
+          {
+            "node": "Synthesis API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthesis API": {
+      "main": [
+        [
+          {
+            "node": "Quality Reflector (Metacognitive)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality Reflector (Metacognitive)": {
+      "main": [
+        [
+          {
+            "node": "Reflection API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reflection API": {
+      "main": [
+        [
+          {
+            "node": "Final Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Output": {
+      "main": [
+        [
+          {
+            "node": "Enhanced Memory Update (Hebbian)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Memory Update (Hebbian)": {
+      "main": [
+        [
+          {
+            "node": "Consciousness Metric (IIT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9adba807-74ca-4667-9697-fe77c79c90bb",
+  "meta": {
+    "instanceId": "1bed73006d324c72ada69b42217bb8d9fd575d42f80263196264e09a3ebbdd7c"
+  },
+  "id": "cqAs8B7zSeDsDWSW",
+  "tags": []
+}
