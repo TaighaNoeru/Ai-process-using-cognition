@@ -187,5 +187,5 @@ To timestamp externally:
 ```bash
 git log --pretty=format:"%H %ad %s" --date=iso > commit_log.txt
 ```
-
+8 days of work, i dont even know how to code but yeah fuck me
 ---
